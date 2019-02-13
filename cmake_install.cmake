@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/Edo/Documents/Projects/cpp-chat-client
+# Install script for directory: C:/Users/edotj/CLionProjects/cpp-chat-client
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/Edo/Documents/Projects/cpp-chat-client/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/edotj/CLionProjects/cpp-chat-client/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
