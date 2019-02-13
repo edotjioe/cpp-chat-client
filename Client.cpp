@@ -20,11 +20,29 @@ int Client::readFromStdin() {
 }
 
 void Client::createSocketAndLogIn() {
+    std::cout << "Creating socket and log in" << std::endl;
 
+    while (true) {
+        std::string str;
+        std::cout << "\nEnter a name : ";
+        std::cin >> str;
+
+        if (str.compare("!quit") == 0) {
+            std::cout << "Quiting" << std::endl;
+
+            this -> closeSocket();
+
+            break;
+        }
+
+        std::cout<<"\nYou entered "<< str << std::endl;
+
+
+    }
 }
 
 void Client::closeSocket() {
-
+    std::cout << "Closing socket" << std::endl;
 }
 
 void Client::tick() {

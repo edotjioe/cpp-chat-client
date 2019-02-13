@@ -9,6 +9,7 @@
 void Application::run() {
     while (!this->stop) {
         this->tick();
+        this->stopApplication();
     }
 }
 
