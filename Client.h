@@ -16,8 +16,30 @@
 #include "vusocket.h"
 #include "CircularLineBuffer.h"
 
+#define BUFFER_LENGTH 400
+
+struct Message {
+    char in[BUFFER_LENGTH];
+    char out[BUFFER_LENGTH];
+};
+
+enum class ConnStatus {
+    IN_PROGRESS,
+    SUCCESS,
+    BUSY,
+    FAILED,
+    QUIT
+};
+
 class Client : public Application {
+
 private:
+    struct Message message;
+    ConnStatus loginStatus;
+
+    bool SendUserName();
+    ConnStatus ReceiveResponseFromServer();
+
     /**
      * You are free to add new member variables and methods here if needed.
      * Please do not remove the ones that are already here.
@@ -94,6 +116,7 @@ public:
      * See the lab manual for the assignment description.
      */
     inline void setup() override {
+        loginStatus = ConnStatus::IN_PROGRESS;
         createSocketAndLogIn();
         startThreads();
     }

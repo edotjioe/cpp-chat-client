@@ -9,7 +9,6 @@ int main(int nargs, char **argv) {
     std::cout << "Running application" << std::endl;
     app -> run();
     app -> stopApplication();
-    std::cout << app->isStopped() << std::endl;
     delete app;
     return 0;
 }

@@ -1,4 +1,3 @@
-.CMakeCache.txt
 .cmake-build-debug
 CMakeCache\.txt
 CMakeFiles/
@@ -7,6 +6,6 @@ Makefile
 cpp-chat-client\.cbp
 cmake_install\.cmake
 \.idea/workspace\.xml
-.MakeFile.txt
-.cpp-chat-client.cbp
-.cmake_install.cmake
+Makefile\.txt
+cpp-chat-client\.cbp
+cmake_install\.cmake
