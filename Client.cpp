@@ -8,9 +8,6 @@
 #include "Client.h"
 #include <iostream>
 
-#define HOST "52.58.97.202"
-#define PORT "5378"
-
 void Client::tick() {
 
 }
