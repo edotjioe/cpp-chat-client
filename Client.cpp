@@ -9,6 +9,21 @@
 #include <iostream>
 
 void Client::tick() {
+    if(loginStatus == ConnStatus::SUCCESS) {
+        while(true){
+            char username[] = "";
+            std::cout << "Please enter your message:";
+
+            fgets(message.out, BUFFER_LENGTH, stdin);
+            strcat(username, message.out);
+
+            if (strcmp(username, "!quit\n") == 0){
+                loginStatus = ConnStatus::QUIT;
+                std::cout << "Quiting chat client." << std::endl;
+                return;
+            }
+        }
+    }
 
 }
 
@@ -26,13 +41,17 @@ void Client::createSocketAndLogIn() {
 
     loginStatus == ConnStatus::IN_PROGRESS;
     struct addrinfo hints = {0}, *addrs;
+
+    const char *host = "52.58.97.202";
+    const char *port = "5378";
+
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
     sock_init();
 
-    const int addrinfo = getaddrinfo(HOST, PORT, &hints, &addrs);
+    const int addrinfo = getaddrinfo(host, port, &hints, &addrs);
 
     if (addrinfo != 0) {
         std::cout << "Host not found." << std::endl;
@@ -58,6 +77,7 @@ void Client::createSocketAndLogIn() {
             loginStatus = ReceiveResponseFromServer();
         }
     }
+
 }
 
 // Send username to server

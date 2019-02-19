@@ -17,8 +17,6 @@
 #include "CircularLineBuffer.h"
 
 #define BUFFER_LENGTH 400
-#define HOST "52.58.97.202"
-#define PORT "5378"
 
 struct Message {
     char in[BUFFER_LENGTH];
