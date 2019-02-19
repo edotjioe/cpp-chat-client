@@ -11,17 +11,31 @@
 void Client::tick() {
     if(loginStatus == ConnStatus::SUCCESS) {
         while(true){
-            char username[] = "";
+            memset(&message.in, 0x00, sizeof(message.in));
+            memset(&message.out, 0x00, sizeof(message.out));
+
+            char msg[] = "";
             std::cout << "Please enter your message:";
 
             fgets(message.out, BUFFER_LENGTH, stdin);
-            strcat(username, message.out);
+            strcat(msg, message.out);
 
-            if (strcmp(username, "!quit\n") == 0){
+            if (strcmp(msg, "!quit\n") == 0){
                 loginStatus = ConnStatus::QUIT;
                 std::cout << "Quiting chat client." << std::endl;
                 return;
+            } else if (strcmp(msg, "!who\n") == 0) {
+                std::cout << "Requesting user list." << std::endl;
+                strcpy(msg, "WHO\n");
             }
+
+            int len = strlen(msg);
+            int send_len = send(sock, msg, 5, 0);
+
+            std::cout << "Send message" << std::endl;
+            int recv_length = recv(sock, message.in, BUFFER_LENGTH, 0);
+
+            std::cout << "SERVER: " << message.in << std::endl;
         }
     }
 
