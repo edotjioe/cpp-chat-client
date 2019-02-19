@@ -9,3 +9,5 @@ cmake_install\.cmake
 Makefile\.txt
 cpp-chat-client\.cbp
 cmake_install\.cmake
+
+\.idea/codeStyles/
