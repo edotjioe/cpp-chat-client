@@ -37,8 +37,10 @@ private:
     struct Message message;
     ConnStatus loginStatus;
 
-    bool SendUserName();
-    ConnStatus ReceiveResponseFromServer();
+    bool quit(char msg[]);
+    void command(char msg[]);
+    bool sendUserName();
+    ConnStatus receiveResponseFromServer();
 
     /**
      * You are free to add new member variables and methods here if needed.

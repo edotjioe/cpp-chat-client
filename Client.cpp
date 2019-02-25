@@ -7,47 +7,7 @@
 #include "vusocket.h"
 #include "Client.h"
 #include <iostream>
-
-void Client::tick() {
-    if(loginStatus == ConnStatus::SUCCESS) {
-        while(true){
-            memset(&message.in, 0x00, sizeof(message.in));
-            memset(&message.out, 0x00, sizeof(message.out));
-
-            char msg[] = "";
-            std::cout << "Please enter your message:";
-
-            fgets(message.out, BUFFER_LENGTH, stdin);
-            strcat(msg, message.out);
-
-            if (strcmp(msg, "!quit\n") == 0){
-                loginStatus = ConnStatus::QUIT;
-                std::cout << "Quiting chat client." << std::endl;
-                return;
-            } else if (strcmp(msg, "!who\n") == 0) {
-                std::cout << "Requesting user list." << std::endl;
-                strcpy(msg, "WHO\n");
-            }
-
-            int len = strlen(msg);
-            int send_len = send(sock, msg, 5, 0);
-
-            std::cout << "Send message" << std::endl;
-            int recv_length = recv(sock, message.in, BUFFER_LENGTH, 0);
-
-            std::cout << "SERVER: " << message.in << std::endl;
-        }
-    }
-
-}
-
-int Client::readFromSocket() {
-    return 0;
-}
-
-int Client::readFromStdin() {
-    return 0;
-}
+//#include <nmsupp.h>
 
 void Client::createSocketAndLogIn() {
     OutputDebugStringW(L"Creating socket.");
@@ -87,15 +47,78 @@ void Client::createSocketAndLogIn() {
     }
 
     while (loginStatus == ConnStatus::IN_PROGRESS) {
-        if (SendUserName()) {
-            loginStatus = ReceiveResponseFromServer();
+        if (sendUserName()) {
+            loginStatus = receiveResponseFromServer();
         }
     }
 
 }
 
+void Client::tick() {
+    while(loginStatus == ConnStatus::SUCCESS) {
+        memset(&message.in, 0x00, sizeof(message.in));
+        memset(&message.out, 0x00, sizeof(message.out));
+
+        char msg[1024] = "";
+        memset(msg, 0, 1024);
+        std::cout << "Please enter your message:";
+
+        fgets(message.out, BUFFER_LENGTH, stdin);
+        strcat(msg, message.out);
+
+        command(msg);
+
+    }
+
+}
+
+//Todo won't work after 2nd send, need to find out why
+void Client::command(char msg[]) {
+    if (quit(msg)){
+        loginStatus = ConnStatus::QUIT;
+        std::cout << "Quiting chat client." << std::endl;
+        return;
+    } else if (msg[0] == '@') {
+        char newMsg[1024] = "";
+        std::copy(&msg[1], &msg[strlen(msg)], newMsg);
+        strcpy(msg, "SEND ");
+        strcat(msg, newMsg);
+    } else if (strcmp(msg, "!who\n") == 0) {
+        std::cout << "Requesting user list." << std::endl;
+        strcpy(msg, "WHO\n");
+    }
+
+    //std::cout << msg << std::endl;
+
+    Sleep(100);
+
+    send(sock, msg, 1024, 0);
+    recv(sock, message.in, 1024, 0);
+
+    std::cout << "SERVER: " << message.in << std::endl;
+
+    if (strcmp(message.in, "SEND-OK\n") == 0) {
+        recv(sock, message.in, 1024, 0);
+
+        std::cout << "SERVER: " << message.in << std::endl;
+    }
+
+}
+
+bool Client::quit(char msg[]) {
+    return strcmp(msg, "!quit\n") ? false : true;
+}
+
+int Client::readFromSocket() {
+    return 0;
+}
+
+int Client::readFromStdin() {
+    return 0;
+}
+
 // Send username to server
-bool Client::SendUserName() {
+bool Client::sendUserName() {
     memset(&message.out, 0x00, sizeof(message.out));
 
     char username[] = "", send_message[] = "HELLO-FROM ";
@@ -104,7 +127,7 @@ bool Client::SendUserName() {
     fgets(message.out, BUFFER_LENGTH, stdin);
     strcat(username, message.out);
 
-    if (strcmp(username, "!quit\n") == 0){
+    if (quit(username)){
         loginStatus = ConnStatus::QUIT;
         std::cout << "Quiting chat client." << std::endl;
         return false;
@@ -126,7 +149,7 @@ bool Client::SendUserName() {
 }
 
 // Receive response of server
-ConnStatus Client::ReceiveResponseFromServer() {
+ConnStatus Client::receiveResponseFromServer() {
     memset(&message.in, 0x00, sizeof(message.in));
 
     int recv_length = recv(sock, message.in, BUFFER_LENGTH, 0);
