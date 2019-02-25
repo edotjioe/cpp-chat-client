@@ -60,19 +60,15 @@ void Client::tick() {
         memset(&message.out, 0x00, sizeof(message.out));
 
         char msg[1024] = "";
-        memset(msg, 0, 1024);
         std::cout << "Please enter your message:";
 
-        fgets(message.out, BUFFER_LENGTH, stdin);
+        fgets(message.out, 1024, stdin);
         strcat(msg, message.out);
 
         command(msg);
-
     }
-
 }
 
-//Todo won't work after 2nd send, need to find out why
 void Client::command(char msg[]) {
     if (quit(msg)){
         loginStatus = ConnStatus::QUIT;
@@ -86,13 +82,10 @@ void Client::command(char msg[]) {
     } else if (strcmp(msg, "!who\n") == 0) {
         std::cout << "Requesting user list." << std::endl;
         strcpy(msg, "WHO\n");
+
     }
 
-    //std::cout << msg << std::endl;
-
-    Sleep(100);
-
-    send(sock, msg, 1024, 0);
+    send(sock, msg, strlen(msg), 0);
     recv(sock, message.in, 1024, 0);
 
     std::cout << "SERVER: " << message.in << std::endl;
@@ -102,7 +95,6 @@ void Client::command(char msg[]) {
 
         std::cout << "SERVER: " << message.in << std::endl;
     }
-
 }
 
 bool Client::quit(char msg[]) {
@@ -136,8 +128,7 @@ bool Client::sendUserName() {
     strcat(send_message, username);
     puts(send_message);
 
-    int len = strlen(send_message);
-    int send_len = send(sock, send_message, len, 0);
+    int send_len = send(sock, send_message, strlen(send_message), 0);
 
     if (send_len) {
         OutputDebugStringW(L"Send Success! SIZE: " + send_len);
@@ -152,7 +143,7 @@ bool Client::sendUserName() {
 ConnStatus Client::receiveResponseFromServer() {
     memset(&message.in, 0x00, sizeof(message.in));
 
-    int recv_length = recv(sock, message.in, BUFFER_LENGTH, 0);
+    int recv_length = recv(sock, message.in, 1024, 0);
 
     if (recv_length != -1) {
         OutputDebugStringW(L"Send Success! SIZE: " + recv_length);
@@ -178,6 +169,8 @@ ConnStatus Client::receiveResponseFromServer() {
 }
 
 void Client::closeSocket() {
+    sock_close(sock);
+    sock_quit();
     std::cout << "Closing socket" << std::endl;
 }
 
