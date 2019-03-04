@@ -43,12 +43,12 @@ void Client::createSocketAndLogIn() {
         std::cout << "Successfully connected to the server" << std::endl;
         break;
     }
-
-    while (loginStatus == ConnStatus::IN_PROGRESS) {
-        if (sendUserName()) {
-            loginStatus = receiveResponseFromServer();
-        }
-    }
+    loginStatus = ConnStatus::SUCCESS;
+//    while (loginStatus == ConnStatus::IN_PROGRESS) {
+//        if (sendUserName()) {
+//            loginStatus = receiveResponseFromServer();
+//        }
+//    }
 
 }
 
@@ -65,20 +65,17 @@ int Client::tick() {
 
         command(msg);
 
-        char test[11] = {'h', 'e', 'l', 'l', 'o', 'h', 'e', 'l', 'l', 'o', '-'};
-        char test2[8] = {'g', 'o', 'o', 'd', 'b', 'y', 'e', '-'};
+        char test[11] = {'h', 'e', 'l', 'l', 'o', 'h', 'e', 'l', 'l', 'o', '\n'};
+        char test2[8] = {'g', 'o', 'o', 'd', 'b', 'y', 'e', '\n'};
         socketBuffer.writeChars(test, 11);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         socketBuffer.writeChars(test2, 8);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//        std::string txt = socketBuffer.readLine();
-//        std::cout << "txt: " << txt << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        socketBuffer.writeChars(test2, 8);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        socketBuffer.writeChars(test2, 8);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         std::string txt = socketBuffer.readLine();
+        std::cout << "txt: " << txt << std::endl;
+        socketBuffer.writeChars(test2, 8);
+        socketBuffer.writeChars(test2, 8);
+//        std::string txt = socketBuffer.readLine();
+//        std::cout << std::endl << "txt: " << txt << std::endl;
+        txt = socketBuffer.readLine();
         std::cout << std::endl << "txt: " << txt << std::endl;
         txt = socketBuffer.readLine();
         std::cout << std::endl << "txt: " << txt << std::endl;
@@ -103,7 +100,9 @@ void Client::command(char msg[]) {
     } else if (strcmp(msg, "!who\n") == 0) {
         std::cout << "Requesting user list." << std::endl;
         strcpy(msg, "WHO\n");
-
+    } else {
+        std::cout << "Client: Command not recognised" << std::endl;
+        return;
     }
 
     send(sock, msg, strlen(msg), 0);

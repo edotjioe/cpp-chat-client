@@ -19,19 +19,19 @@ bool CircularLineBuffer::isEmpty() {
 }
 
 int CircularLineBuffer::nextFreeIndex() {
-    return start + count % bufferSize;
+    return (start + count) % bufferSize;
 }
 
 int CircularLineBuffer::findNewline() {
-    for (int i = 0; i < bufferSize; ++i) {
-        if(buffer[start + i % bufferSize] == '-')
-            return start + i % bufferSize;
+    for (int i = 1; i < bufferSize; ++i) {
+        if(buffer[(start + i) % bufferSize] == '\n')
+            return (start + i) % bufferSize;
     }
-    return 0;
+    return 40;
 }
 
 bool CircularLineBuffer::hasLine() {
-    return findNewline() > 0 ? true : false;
+    return findNewline() < 40 ? true : false;
 }
 
 bool CircularLineBuffer::_writeChars(const char *chars, size_t nchars) {
@@ -39,37 +39,38 @@ bool CircularLineBuffer::_writeChars(const char *chars, size_t nchars) {
         return false;
 
     for (int i = 0; i < nchars; ++i) {
-        buffer[nextFreeIndex() + i % bufferSize] = chars[i];
+        buffer[(nextFreeIndex() + i) % bufferSize] = chars[i];
     }
 
     count = count + nchars;
 
-    std::cout << "Start: " << start << ", " << "Count: " << count << ", ";
-    std::cout << "Buffer: ";
-    for (int j = start; j < count; ++j) {
-        std::cout << buffer[j] << "";
-    }
-    std::cout << std::endl;
     return true;
 }
 
 std::string CircularLineBuffer::_readLine() {
+    std::cout << "Hasline " << hasLine() << " find new line " << findNewline();
     if (hasLine()){
-        const int len = findNewline() - start;
+        int len;
+        if ((start % bufferSize) > findNewline())
+            len = findNewline() + (bufferSize - (start % bufferSize));
+        else if (findNewline() > (start % bufferSize))
+            len = findNewline() - (start % bufferSize);
+
+        std::cout << "Start: " << start << " Count: " << count << " Length: " << len;
         char strl[len];
+
+        memset(&strl, 0x00, sizeof(strl));
         for (int i = 0; i < len; ++i) {
-            strl[i] = buffer[i + start % bufferSize];
+            strl[i] = buffer[(i + start) % bufferSize];
         }
 
-        for (int j = 0; j < count; ++j) {
-            std::cout << strl[j + start];
-        }
-
-        start = findNewline() + 1;
-        count = count - len;
+        strl[len] = '\0';
+        start = start + len + 1;
+        count = count - len - 1;
 
         std::string str(strl);
+
         return str;
     }
-    return "";
+    return "shit";
 }

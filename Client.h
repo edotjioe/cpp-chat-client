@@ -37,6 +37,8 @@ private:
     struct Message message;
     ConnStatus loginStatus;
 
+    const char who[4] = {'W', 'H', 'O', '\n'};
+
     bool quit(char msg[]);
     void command(char msg[]);
     bool sendUserName();
