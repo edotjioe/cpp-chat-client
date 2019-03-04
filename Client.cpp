@@ -3,11 +3,9 @@
 //
 #include <thread>
 #include <string.h>
-#include "Application.h"
 #include "vusocket.h"
 #include "Client.h"
 #include <iostream>
-//#include <nmsupp.h>
 
 void Client::createSocketAndLogIn() {
     OutputDebugStringW(L"Creating socket.");
@@ -54,8 +52,8 @@ void Client::createSocketAndLogIn() {
 
 }
 
-void Client::tick() {
-    while(loginStatus == ConnStatus::SUCCESS) {
+int Client::tick() {
+    if(loginStatus == ConnStatus::SUCCESS){
         memset(&message.in, 0x00, sizeof(message.in));
         memset(&message.out, 0x00, sizeof(message.out));
 
@@ -66,7 +64,30 @@ void Client::tick() {
         strcat(msg, message.out);
 
         command(msg);
+
+        char test[11] = {'h', 'e', 'l', 'l', 'o', 'h', 'e', 'l', 'l', 'o', '-'};
+        char test2[8] = {'g', 'o', 'o', 'd', 'b', 'y', 'e', '-'};
+        socketBuffer.writeChars(test, 11);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        socketBuffer.writeChars(test2, 8);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//        std::string txt = socketBuffer.readLine();
+//        std::cout << "txt: " << txt << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        socketBuffer.writeChars(test2, 8);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        socketBuffer.writeChars(test2, 8);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::string txt = socketBuffer.readLine();
+        std::cout << std::endl << "txt: " << txt << std::endl;
+        txt = socketBuffer.readLine();
+        std::cout << std::endl << "txt: " << txt << std::endl;
+        txt = socketBuffer.readLine();
+        std::cout << std::endl << "txt: " << txt << std::endl;
+        return 1;
     }
+
+    return -1;
 }
 
 void Client::command(char msg[]) {
@@ -114,7 +135,7 @@ bool Client::sendUserName() {
     memset(&message.out, 0x00, sizeof(message.out));
 
     char username[] = "", send_message[] = "HELLO-FROM ";
-    std::cout << "Please enter your user name:";
+    std::cout << "Please enter your user name: ";
 
     fgets(message.out, BUFFER_LENGTH, stdin);
     strcat(username, message.out);
