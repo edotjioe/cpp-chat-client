@@ -43,13 +43,14 @@ void Client::createSocketAndLogIn() {
         std::cout << "Successfully connected to the server" << std::endl;
         break;
     }
-    loginStatus = ConnStatus::SUCCESS;
-//    while (loginStatus == ConnStatus::IN_PROGRESS) {
-//        if (sendUserName()) {
-//            loginStatus = receiveResponseFromServer();
-//        }
-//    }
 
+    loginStatus = ConnStatus::SUCCESS;
+    while (loginStatus == ConnStatus::IN_PROGRESS) {
+        std::cout << "Text";
+        if (sendUserName()) {
+            loginStatus = receiveResponseFromServer();
+        }
+    }
 }
 
 int Client::tick() {
