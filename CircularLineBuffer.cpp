@@ -38,7 +38,6 @@ bool CircularLineBuffer::_writeChars(const char *chars, size_t nchars) {
     if (isFull() || nchars > freeSpace())
         return false;
 
-    std::cout << chars << std::endl;
     for (int i = 0; i < nchars; ++i)
         buffer[(nextFreeIndex() + i) % bufferSize] = chars[i];
 

@@ -60,7 +60,6 @@ int Client::tick() {
             char msg[output.size()];
             strcpy(msg, output.c_str());
 
-            //std::cout << msg << std::endl;
             command(msg);
         }
 
@@ -92,7 +91,7 @@ void Client::command(char msg[]) {
 }
 
 bool Client::quit(char msg[]) {
-    return strcmp(msg, "!exit\n") ? false : true;
+    return strcmp(msg, "!exit\n") == 0;
 }
 
 int Client::readFromSocket() {
@@ -105,6 +104,7 @@ int Client::readFromSocket() {
         output = message.in;
         char msg[length];
         strcpy(msg, output.c_str());
+        msg[length] = '\0';
         socketBuffer.writeChars(msg, length);
         return length;
     }
@@ -120,8 +120,9 @@ int Client::readFromStdin() {
     char msg[length];
     strcpy(msg, input);
     msg[length - 1] = '\n';
+    msg[length] = '\0';
 
-    if(strcmp(msg, "!exit\n")){
+    if(quit(msg)){
         std::cout << "Exiting client" << std::endl;
         loginStatus = ConnStatus::QUIT;
         return -1;
