@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.10.2)
 project(cpp-chat-client)
 
 set(CMAKE_CXX_STANDARD 17)
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
 set(TARGET_NAME cpp-chat-client)
 add_executable(${TARGET_NAME} main.cpp vusocket.h Client.cpp Client.h vusocket.cpp CircularLineBuffer.cpp CircularLineBuffer.h)
 if(WIN32)

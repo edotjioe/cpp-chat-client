@@ -121,7 +121,7 @@ int Client::readFromStdin() {
     strcpy(msg, input);
     msg[length - 1] = '\n';
 
-    if(!quit(msg)){
+    if(strcmp(msg, "!exit\n")){
         std::cout << "Exiting client" << std::endl;
         loginStatus = ConnStatus::QUIT;
         return -1;
