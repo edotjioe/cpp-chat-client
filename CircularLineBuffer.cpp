@@ -11,11 +11,11 @@ int CircularLineBuffer::freeSpace() {
 }
 
 bool CircularLineBuffer::isFull() {
-    return bufferSize - count <= 0 ? true: false;
+    return bufferSize == count;
 }
 
 bool CircularLineBuffer::isEmpty() {
-    return count == 0 ? true: false;
+    return count == 0;
 }
 
 int CircularLineBuffer::nextFreeIndex() {
@@ -27,17 +27,18 @@ int CircularLineBuffer::findNewline() {
         if(buffer[(start + i) % bufferSize] == '\n')
             return (start + i) % bufferSize;
     }
-    return 40;
+    return -1;
 }
 
 bool CircularLineBuffer::hasLine() {
-    return findNewline() < bufferSize ? true : false;
+    return findNewline() != -1 && !isEmpty();
 }
 
 bool CircularLineBuffer::_writeChars(const char *chars, size_t nchars) {
     if (isFull() || nchars > freeSpace())
         return false;
 
+    std::cout << chars << std::endl;
     for (int i = 0; i < nchars; ++i)
         buffer[(nextFreeIndex() + i) % bufferSize] = chars[i];
 
@@ -47,23 +48,22 @@ bool CircularLineBuffer::_writeChars(const char *chars, size_t nchars) {
 }
 
 std::string CircularLineBuffer::_readLine() {
-    std::cout << "Hasline " << hasLine() << " find new line " << findNewline() << std::endl;
     if (!isEmpty() && hasLine()){
         int len;
-        //Todo Change this to something nicer
+
         start > findNewline() ?
-                len = findNewline() + (bufferSize - start) : len = findNewline() - start;
+                len = findNewline() + (bufferSize - start) + 1 : len = findNewline() - start + 1;
 
-        std::cout << "Start: " << start << " Count: " << count << " Length: " << len << std::endl;
         char strl[len];
-
         memset(&strl, 0x00, sizeof(strl));
+
         for (int i = 0; i < len; ++i)
             strl[i] = buffer[(i + start) % bufferSize];
+
         strl[len] = '\0';
 
-        start = (start + len + 1) % bufferSize;
-        count = count - len - 1;
+        start = (start + len) % bufferSize;
+        count = count - len;
 
         std::string str(strl);
 

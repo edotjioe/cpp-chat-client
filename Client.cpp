@@ -11,7 +11,7 @@ void Client::createSocketAndLogIn() {
     OutputDebugStringW(L"Creating socket.");
     std::cout << "Creating socket and log in" << std::endl;
 
-    loginStatus == ConnStatus::IN_PROGRESS;
+    loginStatus = ConnStatus::IN_PROGRESS;
     struct addrinfo hints = {0}, *addrs;
 
     const char *host = "52.58.97.202";
@@ -44,9 +44,7 @@ void Client::createSocketAndLogIn() {
         break;
     }
 
-    loginStatus = ConnStatus::SUCCESS;
     while (loginStatus == ConnStatus::IN_PROGRESS) {
-        std::cout << "Text";
         if (sendUserName()) {
             loginStatus = receiveResponseFromServer();
         }
@@ -55,51 +53,35 @@ void Client::createSocketAndLogIn() {
 
 int Client::tick() {
     if(loginStatus == ConnStatus::SUCCESS){
-        memset(&message.in, 0x00, sizeof(message.in));
-        memset(&message.out, 0x00, sizeof(message.out));
+        if(stdinBuffer.hasLine()){
+            std::string output;
+            output = stdinBuffer.readLine();
 
-        char msg[1024] = "";
-        std::cout << "Please enter your message:";
+            char msg[output.size()];
+            strcpy(msg, output.c_str());
 
-        fgets(message.out, 1024, stdin);
-        strcat(msg, message.out);
+            //std::cout << msg << std::endl;
+            command(msg);
+        }
 
-        command(msg);
+        if(socketBuffer.hasLine()){
+            std::string input;
+            input = socketBuffer.readLine();
 
-        char test[11] = {'h', 'e', 'l', 'l', 'o', 'h', 'e', 'l', 'l', 'o', '\n'};
-        char test2[8] = {'g', 'o', 'o', 'd', 'b', 'y', 'e', '\n'};
-        socketBuffer.writeChars(test, 11);
-        socketBuffer.writeChars(test2, 8);
-        std::string txt = socketBuffer.readLine();
-        std::cout << "txt: " << txt << std::endl;
-        socketBuffer.writeChars(test2, 8);
-        socketBuffer.writeChars(test2, 8);
-//        std::string txt = socketBuffer.readLine();
-//        std::cout << std::endl << "txt: " << txt << std::endl;
-        txt = socketBuffer.readLine();
-        std::cout << std::endl << "txt: " << txt << std::endl;
-        txt = socketBuffer.readLine();
-        std::cout << std::endl << "txt: " << txt << std::endl;
-        txt = socketBuffer.readLine();
-        std::cout << std::endl << "txt: " << txt << std::endl;
-        return 1;
+            std::cout << "SERVER: " << input << std::endl;
+        }
+        return 0;
     }
-
     return -1;
 }
 
 void Client::command(char msg[]) {
-    if (quit(msg)){
-        loginStatus = ConnStatus::QUIT;
-        std::cout << "Quiting chat client." << std::endl;
-        return;
-    } else if (msg[0] == '@') {
+    if (msg[0] == '@') {
         char newMsg[1024] = "";
         std::copy(&msg[1], &msg[strlen(msg)], newMsg);
         strcpy(msg, "SEND ");
         strcat(msg, newMsg);
     } else if (strcmp(msg, "!who\n") == 0) {
-        std::cout << "Requesting user list." << std::endl;
         strcpy(msg, "WHO\n");
     } else {
         std::cout << "Client: Command not recognised" << std::endl;
@@ -107,27 +89,46 @@ void Client::command(char msg[]) {
     }
 
     send(sock, msg, strlen(msg), 0);
-    recv(sock, message.in, 1024, 0);
-
-    std::cout << "SERVER: " << message.in << std::endl;
-
-    if (strcmp(message.in, "SEND-OK\n") == 0) {
-        recv(sock, message.in, 1024, 0);
-
-        std::cout << "SERVER: " << message.in << std::endl;
-    }
 }
 
 bool Client::quit(char msg[]) {
-    return strcmp(msg, "!quit\n") ? false : true;
+    return strcmp(msg, "!exit\n") ? false : true;
 }
 
 int Client::readFromSocket() {
-    return 0;
+    memset(&message.in, 0x00, sizeof(message.in));
+
+    int length = recv(sock, message.in, 1024, 0);
+
+    if(length != -1) {
+        std::string output;
+        output = message.in;
+        char msg[length];
+        strcpy(msg, output.c_str());
+        socketBuffer.writeChars(msg, length);
+        return length;
+    }
+    return length;
 }
 
 int Client::readFromStdin() {
-    return 0;
+    char input[4096];
+
+    std::cin.getline(input,sizeof(input));
+
+    int length = strlen(input) + 1;
+    char msg[length];
+    strcpy(msg, input);
+    msg[length - 1] = '\n';
+
+    if(!quit(msg)){
+        std::cout << "Exiting client" << std::endl;
+        loginStatus = ConnStatus::QUIT;
+        return -1;
+    }
+
+    stdinBuffer.writeChars(msg, length);
+    return length;
 }
 
 // Send username to server
