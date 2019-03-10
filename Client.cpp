@@ -43,10 +43,11 @@ void Client::createSocketAndLogIn() {
         break;
     }
 
-    char string[16];
-    strcpy(string, "HELLO-FROM Edo\n");
+    char string[15];
+    strcpy(string, "HELLO-FROM Edo");
+    string[14] = '\n';
 
-    if (sendto(sock, string, 16, 0, adr->ai_addr, adr->ai_addrlen) == -1)
+    if (sendto(sock, string, 15, 0, adr->ai_addr, adr->ai_addrlen) == -1)
         cout << "Failed to send" << endl;
 
 
