@@ -63,12 +63,26 @@ void Client::createSocketAndLogIn() {
     char buffer[4000];
     int n = 0;
 
-    if(n = recvfrom(sock, buffer, 4000, 0, adr->ai_addr, &len) < 0)
+    if(n = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len) < 0)
         cout << "Failed to receive" << endl;
 
     buffer[n] = '\0';
-    printf("Server: %s\n", buffer);
-    printf("Length: ", sizeof(buffer));
+    printf("Server: %s\n", message.in);
+
+    string[4];
+    strcpy(string, "WHO");
+    string[3] = '\n';
+
+    if (sendto(sock, string, 15, 0, adr -> ai_addr, len) == -1)
+        cout << "Failed to send" << endl;
+
+    n = 0;
+
+    if(n = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len) < 0)
+        cout << "Failed to receive" << endl;
+
+    buffer[n] = '\0';
+    printf("Server: %s\n", message.in);
 //    while (loginStatus == ConnStatus::IN_PROGRESS) {
 //        if (sendUserName()) {
 //            loginStatus = receiveResponseFromServer();
