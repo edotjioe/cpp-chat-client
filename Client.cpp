@@ -20,6 +20,8 @@ void Client::createSocketAndLogIn() {
     const char *host = "52.58.97.202";
     const char *port = "5382";
 
+    int len = sizeof(sockaddr_in);
+
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
@@ -39,6 +41,13 @@ void Client::createSocketAndLogIn() {
             continue;
         }
 
+//        if (bind((SOCKET) sock, (sockaddr*) &adr, len) == -1) {
+//            cout << "Failed to bind" << endl;
+//            sock_error_code();
+//            sock_close(sock);
+//            continue;
+//        }
+
         std::cout << "Successfully connected to the server" << std::endl;
         break;
     }
@@ -47,19 +56,19 @@ void Client::createSocketAndLogIn() {
     strcpy(string, "HELLO-FROM Edo");
     string[14] = '\n';
 
-    if (sendto(sock, string, 15, 0, adr->ai_addr, adr->ai_addrlen) == -1)
+    if (sendto(sock, string, 15, 0, adr -> ai_addr, len) == -1)
         cout << "Failed to send" << endl;
 
 
-    char buffer[4096];
-    int n = 0, len;
+    char buffer[4000];
+    int n = 0;
 
-    if(n = recvfrom(sock, (char *)buffer, 4096, MSG_WAITALL, adr->ai_addr, &len) == -1)
+    if(n = recvfrom(sock, buffer, 4000, 0, adr->ai_addr, &len) < 0)
         cout << "Failed to receive" << endl;
 
     buffer[n] = '\0';
     printf("Server: %s\n", buffer);
-
+    printf("Length: ", sizeof(buffer));
 //    while (loginStatus == ConnStatus::IN_PROGRESS) {
 //        if (sendUserName()) {
 //            loginStatus = receiveResponseFromServer();
