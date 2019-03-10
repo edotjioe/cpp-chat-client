@@ -6,20 +6,23 @@
 #include "vusocket.h"
 #include "Client.h"
 #include <iostream>
+#include <Ws2tcpip.h>
+
+using namespace std;
 
 void Client::createSocketAndLogIn() {
     OutputDebugStringW(L"Creating socket.");
     std::cout << "Creating socket and log in" << std::endl;
 
     loginStatus = ConnStatus::IN_PROGRESS;
-    struct addrinfo hints = {0}, *addrs;
+    struct addrinfo hints = {0}, *addrs, *adr;
 
     const char *host = "52.58.97.202";
-    const char *port = "5378";
+    const char *port = "5382";
 
     hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = IPPROTO_UDP;
 
     sock_init();
 
@@ -30,25 +33,37 @@ void Client::createSocketAndLogIn() {
         abort();
     }
 
-    for (struct addrinfo *adr = addrs; adr != nullptr; adr = adr -> ai_next) {
+    for (adr = addrs; adr != nullptr; adr = adr -> ai_next) {
         if ((sock = socket(adr -> ai_family, adr -> ai_socktype, adr -> ai_protocol)) == -1) {
             sock_error_code();
             continue;
         }
-        if (connect((SOCKET) sock, adr -> ai_addr, adr -> ai_addrlen) == -1) {
-            sock_error_code();
-            sock_close(sock);
-            continue;
-        }
+
         std::cout << "Successfully connected to the server" << std::endl;
         break;
     }
 
-    while (loginStatus == ConnStatus::IN_PROGRESS) {
-        if (sendUserName()) {
-            loginStatus = receiveResponseFromServer();
-        }
-    }
+    char string[16];
+    strcpy(string, "HELLO-FROM Edo\n");
+
+    if (sendto(sock, string, 16, 0, adr->ai_addr, adr->ai_addrlen) == -1)
+        cout << "Failed to send" << endl;
+
+
+    char buffer[4096];
+    int n = 0, len;
+
+    if(n = recvfrom(sock, (char *)buffer, 4096, MSG_WAITALL, adr->ai_addr, &len) == -1)
+        cout << "Failed to receive" << endl;
+
+    buffer[n] = '\0';
+    printf("Server: %s\n", buffer);
+
+//    while (loginStatus == ConnStatus::IN_PROGRESS) {
+//        if (sendUserName()) {
+//            loginStatus = receiveResponseFromServer();
+//        }
+//    }
 }
 
 int Client::tick() {
