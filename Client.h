@@ -38,10 +38,13 @@ private:
     ConnStatus loginStatus;
 
     struct addrinfo *adr;
-    int len;
+    int len, expectedValue;
+    char checkString[sizeof(message.in)];
 
     bool exit(char *msg);
     bool sendUserName();
+
+    int checkMessage(char message[]);
 
     void command(char msg[]);
     void createSocket();
