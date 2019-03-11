@@ -211,8 +211,10 @@ int Client::readFromSocket() {
     int length = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len);
 
     // Checking if the message is complete
-    if(strcmp(checkString, message.in) == 0 || checkMessage(message.in) == 0)
+    if(strcmp(checkString, message.in) == 0 || checkMessage(message.in) == 0) {
+        expectedValue = 1;
         return 0;
+    }
     else if (checkMessage(message.in) != expectedValue && checkMessage(message.in) != 1) {
         expectedValue = 1;
         return 0;
