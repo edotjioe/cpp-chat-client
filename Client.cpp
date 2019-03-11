@@ -11,16 +11,32 @@
 using namespace std;
 
 void Client::createSocketAndLogIn() {
+    createSocket();
+
+    while (loginStatus == ConnStatus::IN_PROGRESS) {
+        if (sendUserName()) {
+            memset(&message.in, 0x00, sizeof(message.in));
+            if (recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len) < 0) {
+                cout << "Failed to establish connection with server" << endl;
+                loginStatus = ConnStatus::FAILED;
+                return;
+            }
+            loginStatus = receiveResponseFromServer(message.in);
+        }
+    }
+}
+
+/*Creating socket with UDP protocol*/
+void Client::createSocket() {
     OutputDebugStringW(L"Creating socket.");
     std::cout << "Creating socket and log in" << std::endl;
 
     loginStatus = ConnStatus::IN_PROGRESS;
-    struct addrinfo hints = {0}, *addrs, *adr;
+    struct addrinfo hints = {0}, *addrs;
 
     const char *host = "52.58.97.202";
     const char *port = "5382";
-
-    int len = sizeof(sockaddr_in);
+    len = sizeof(sockaddr_in);
 
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
@@ -40,54 +56,89 @@ void Client::createSocketAndLogIn() {
             sock_error_code();
             continue;
         }
-
-//        if (bind((SOCKET) sock, (sockaddr*) &adr, len) == -1) {
-//            cout << "Failed to bind" << endl;
-//            sock_error_code();
-//            sock_close(sock);
-//            continue;
-//        }
-
-        std::cout << "Successfully connected to the server" << std::endl;
         break;
     }
+}
 
-    char string[15];
-    strcpy(string, "HELLO-FROM Edo");
-    string[14] = '\n';
+void Client::closeSocket() {
+    sock_close(sock);
+    sock_quit();
+    std::cout << "Closing socket" << std::endl;
 
-    if (sendto(sock, string, 15, 0, adr -> ai_addr, len) == -1)
+    return;
+}
+
+/*Handling the different commands of the client*/
+void Client::command(char msg[]) {
+    if (msg[0] == '@') {
+        char newMsg[1024] = "";
+        std::copy(&msg[1], &msg[strlen(msg)], newMsg);
+        strcpy(msg, "SEND ");
+        strcat(msg, newMsg);
+    } else if (strcmp(msg, "!who\n") == 0) {
+        strcpy(msg, "WHO\n");
+    } else {
+        std::cout << "Client: Command not recognised" << std::endl;
+        return;
+    }
+
+    if (sendto(sock, msg, strlen(msg), 0, adr -> ai_addr, adr -> ai_addrlen) == -1) {
         cout << "Failed to send" << endl;
+        return;
+    }
+    //send(sock, msg, strlen(msg), 0);
+}
 
+/*Handling exit functionality*/
+bool Client::exit(char *msg) {
+    return strcmp(msg, "!exit\n") == 0;
+}
 
-    char buffer[4000];
-    int n = 0;
+/*Send username to server*/
+bool Client::sendUserName() {
+    memset(&message.out, 0x00, sizeof(message.out));
 
-    if(n = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len) < 0)
-        cout << "Failed to receive" << endl;
+    char username[] = "", send_message[] = "HELLO-FROM ";
+    std::cout << "Please enter your user name: ";
 
-    buffer[n] = '\0';
-    printf("Server: %s\n", message.in);
+    fgets(message.out, BUFFER_LENGTH, stdin);
+    strcat(username, message.out);
 
-    string[4];
-    strcpy(string, "WHO");
-    string[3] = '\n';
+    if (exit(username)){
+        loginStatus = ConnStatus::QUIT;
+        std::cout << "Quiting chat client." << std::endl;
+        return false;
+    }
 
-    if (sendto(sock, string, 15, 0, adr -> ai_addr, len) == -1)
+    strcat(send_message, username);
+    puts(send_message);
+
+    if (sendto(sock, send_message, strlen(send_message), 0, adr -> ai_addr, adr -> ai_addrlen) == -1) {
         cout << "Failed to send" << endl;
+        return false;
+    }
 
-    n = 0;
+    return true;
+}
 
-    if(n = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len) < 0)
-        cout << "Failed to receive" << endl;
+/*Receive response of server*/
+ConnStatus Client::receiveResponseFromServer(char message[]) {
+    OutputDebugStringW(L"Send Success! SIZE: " + strlen(message));
+    std::cout << "SERVER: " << message << std::endl;
 
-    buffer[n] = '\0';
-    printf("Server: %s\n", message.in);
-//    while (loginStatus == ConnStatus::IN_PROGRESS) {
-//        if (sendUserName()) {
-//            loginStatus = receiveResponseFromServer();
-//        }
-//    }
+    if (!strncmp("IN-USE", message, 6)) {
+        OutputDebugStringW(L"Username in-use, ask for new username.");
+        printf("Username in-use, try another username.");
+        return ConnStatus::IN_PROGRESS;
+    }
+    else if (!strncmp("BUSY", message, 4)) {
+        std::cout << ("Server is busy. Try again later.") << std::endl;
+        return ConnStatus::BUSY;
+    }
+    else {
+        OutputDebugStringW(L"Successfully established connection.");
+        return ConnStatus::SUCCESS;
+    }
 }
 
 int Client::tick() {
@@ -113,30 +164,10 @@ int Client::tick() {
     return -1;
 }
 
-void Client::command(char msg[]) {
-    if (msg[0] == '@') {
-        char newMsg[1024] = "";
-        std::copy(&msg[1], &msg[strlen(msg)], newMsg);
-        strcpy(msg, "SEND ");
-        strcat(msg, newMsg);
-    } else if (strcmp(msg, "!who\n") == 0) {
-        strcpy(msg, "WHO\n");
-    } else {
-        std::cout << "Client: Command not recognised" << std::endl;
-        return;
-    }
-
-    send(sock, msg, strlen(msg), 0);
-}
-
-bool Client::quit(char msg[]) {
-    return strcmp(msg, "!exit\n") == 0;
-}
-
 int Client::readFromSocket() {
     memset(&message.in, 0x00, sizeof(message.in));
 
-    int length = recv(sock, message.in, 1024, 0);
+    int length = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len);
 
     if(length != -1) {
         std::string output;
@@ -161,7 +192,7 @@ int Client::readFromStdin() {
     msg[length - 1] = '\n';
     msg[length] = '\0';
 
-    if(quit(msg)){
+    if(exit(msg)){
         std::cout << "Exiting client" << std::endl;
         loginStatus = ConnStatus::QUIT;
         return -1;
@@ -170,69 +201,3 @@ int Client::readFromStdin() {
     stdinBuffer.writeChars(msg, length);
     return length;
 }
-
-// Send username to server
-bool Client::sendUserName() {
-    memset(&message.out, 0x00, sizeof(message.out));
-
-    char username[] = "", send_message[] = "HELLO-FROM ";
-    std::cout << "Please enter your user name: ";
-
-    fgets(message.out, BUFFER_LENGTH, stdin);
-    strcat(username, message.out);
-
-    if (quit(username)){
-        loginStatus = ConnStatus::QUIT;
-        std::cout << "Quiting chat client." << std::endl;
-        return false;
-    }
-
-    strcat(send_message, username);
-    puts(send_message);
-
-    int send_len = send(sock, send_message, strlen(send_message), 0);
-
-    if (send_len) {
-        OutputDebugStringW(L"Send Success! SIZE: " + send_len);
-        return true;
-    }else {
-        OutputDebugStringW(L"Error sending username.");
-        return false;
-    }
-}
-
-// Receive response of server
-ConnStatus Client::receiveResponseFromServer() {
-    memset(&message.in, 0x00, sizeof(message.in));
-
-    int recv_length = recv(sock, message.in, 1024, 0);
-
-    if (recv_length != -1) {
-        OutputDebugStringW(L"Send Success! SIZE: " + recv_length);
-        std::cout << "SERVER: " << message.in << std::endl;
-
-        if (!strncmp("IN-USE", message.in, 6)) {
-            OutputDebugStringW(L"Username in-use, ask for new username.");
-            printf("Username in-use, try another username.");
-            return ConnStatus::IN_PROGRESS;
-        }
-        else if (!strncmp("BUSY", message.in, 4)) {
-            std::cout << ("Server is busy. Try again later.") << std::endl;
-            return ConnStatus::BUSY;
-        }
-        else {
-            OutputDebugStringW(L"Successfully established connection.");
-            return ConnStatus::SUCCESS;
-        }
-    }else {
-        std::cout << "Failed to establish connection with server";
-        return ConnStatus::FAILED;
-    }
-}
-
-void Client::closeSocket() {
-    sock_close(sock);
-    sock_quit();
-    std::cout << "Closing socket" << std::endl;
-}
-
