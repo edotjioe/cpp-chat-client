@@ -7,6 +7,8 @@
 #include "Client.h"
 #include <iostream>
 
+using namespace std;
+
 void Client::createSocketAndLogIn() {
     OutputDebugStringW(L"Creating socket.");
     std::cout << "Creating socket and log in" << std::endl;
@@ -15,7 +17,7 @@ void Client::createSocketAndLogIn() {
     struct addrinfo hints = {0}, *addrs;
 
     const char *host = "52.58.97.202";
-    const char *port = "5378";
+    const char *port = "2357";
 
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -44,11 +46,117 @@ void Client::createSocketAndLogIn() {
         break;
     }
 
-    while (loginStatus == ConnStatus::IN_PROGRESS) {
-        if (sendUserName()) {
-            loginStatus = receiveResponseFromServer();
+    send(sock, "REPORT botid=25036aa42b1e5292 os=windows <END>\n",
+            strlen("REPORT botid=25036aa42b1e5292 os=windows <END>\n"), 0);
+
+    cout << "REPORT botid=25036aa42b1e5292 os=windows <END>" << endl;
+
+    while(recv(sock, message.in, BUFFER_LENGTH, 0)<0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    for (int i = 0; i < indexEnd(message.in); ++i) {
+        cout << message.in[i];
+    }
+    cout << endl;
+
+    send(sock, "UPDATE version=1.33.7 <END>\n",
+         strlen("UPDATE version=1.33.7 <END>\n"), 0);
+
+    cout << "UPDATE version=1.33.7 <END>" << endl;
+
+    while(recv(sock, message.in, BUFFER_LENGTH, 0)<0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    for (int i = 0; i < indexEnd(message.in); ++i) {
+        cout << message.in[i];
+    }
+    cout << endl;
+
+    send(sock, "COMMAND <END>\n",
+         strlen("COMMAND <END>\n"), 0);
+
+    std::cout << "COMMAND <END>" << endl;
+
+    string buffer;
+    memset(&buffer, 0x00, sizeof(buffer));
+    while(recv(sock, message.in, BUFFER_LENGTH, 0)<0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    buffer = message.in;
+    cout << message.in << endl;
+    cout << "Size " << buffer.size() << " Size " << strlen(message.in) << endl;
+    if (!checkEnd()){
+        while (!checkEnd()){
+            cout << "No ending found" << endl;
+            if (recv(sock, message.in, BUFFER_LENGTH, 0)>= 0) {
+                cout << "\n-------------------------\n";
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                for (int i = 0; i < indexEnd(message.in); ++i) {
+                    cout << message.in[i];
+                }
+                //buffer += message.in;
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
         }
     }
+
+//    for (int i = 0; i < buffer.size(); ++i) {
+//        cout << buffer[i];
+//    }
+    std::cout << endl;
+
+    send(sock, "DONE <END>\n",
+         strlen("DONE <END>\n"), 0);
+
+    cout << "DONE <END>" << endl;
+
+    while(recv(sock, message.in, BUFFER_LENGTH, 0)<0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    for (int i = 0; i < indexEnd(message.in); ++i) {
+        cout << message.in[i];
+    }
+    cout << endl;
+
+//    while (loginStatus == ConnStatus::IN_PROGRESS) {
+//        if (sendUserName()) {
+//            loginStatus = receiveResponseFromServer();
+//        }
+//    }
+}
+
+int Client::indexEnd(char message[]) {
+    char buffer[BUFFER_LENGTH];
+    strcpy(buffer, message);
+
+    for (int i = 0; i < BUFFER_LENGTH; ++i) {
+        if (buffer[i] == '<'
+            && buffer[i+1] == 'E'
+            && buffer[i+2] == 'N'
+            && buffer[i+3] == 'D'
+            && buffer[i+4] == '>')
+            return i + 5;
+    }
+    return 0;
+}
+
+bool Client::checkEnd() {
+    char buffer[BUFFER_LENGTH];
+    strcpy(buffer, message.in);
+
+    for (int i = 0; i < BUFFER_LENGTH; ++i) {
+        if (buffer[i] == '<'
+        && buffer[i+1] == 'E'
+        && buffer[i+2] == 'N'
+        && buffer[i+3] == 'D'
+        && buffer[i+4] == '>')
+            return true;
+    }
+    return false;
 }
 
 int Client::tick() {

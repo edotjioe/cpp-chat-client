@@ -16,7 +16,7 @@
 #include "vusocket.h"
 #include "CircularLineBuffer.h"
 
-#define BUFFER_LENGTH 400
+#define BUFFER_LENGTH 40000
 
 struct Message {
     char in[BUFFER_LENGTH];
@@ -41,6 +41,8 @@ private:
     void command(char msg[]);
     bool sendUserName();
     ConnStatus receiveResponseFromServer();
+    bool checkEnd();
+    int indexEnd(char message[]);
 
     /**
      * You are free to add new member variables and methods here if needed.
