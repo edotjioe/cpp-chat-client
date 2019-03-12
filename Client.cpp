@@ -184,7 +184,14 @@ int Client::checkMessage(char message[]) {
 
 int Client::tick() {
     if(loginStatus == ConnStatus::SUCCESS){
+        if(socketBuffer.hasLine()){
+            std::string input;
+            input = socketBuffer.readLine();
+
+            std::cout << "SERVER: " << input << std::endl;
+        }
         if(stdinBuffer.hasLine()){
+
             string output;
             output = stdinBuffer.readLine();
 
@@ -192,13 +199,6 @@ int Client::tick() {
             strcpy(msg, output.c_str());
 
             command(msg);
-        }
-
-        if(socketBuffer.hasLine()){
-            std::string input;
-            input = socketBuffer.readLine();
-
-            std::cout << "SERVER: " << input << std::endl;
         }
         return 0;
     }
