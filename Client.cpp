@@ -86,7 +86,6 @@ void Client::createSocketAndLogIn() {
     }
     buffer = message.in;
     cout << message.in << endl;
-    cout << "Size " << buffer.size() << " Size " << strlen(message.in) << endl;
     if (!checkEnd()){
         while (!checkEnd()){
             cout << "No ending found" << endl;
