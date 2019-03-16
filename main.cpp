@@ -289,17 +289,10 @@ int main()
 
             if (client[i].socket != INVALID_SOCKET)
                 num_clients++;
-
-            std::cout << client[i].socket << std::endl;
         }
 
         if (temp_id != -1)
         {
-            //Send the id to that client
-//            std::cout << "Client #" << client[temp_id].id << " Accepted" << std::endl;
-//            msg = std::to_string(client[temp_id].id);
-//            send(client[temp_id].socket, msg.c_str(), strlen(msg.c_str()), 0);
-
             //Create a thread process for that client
             my_thread[temp_id] = std::thread(process_client, std::ref(client[temp_id]), std::ref(client), std::ref(my_thread[temp_id]));
         }
