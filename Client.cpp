@@ -14,8 +14,8 @@ void Client::createSocketAndLogIn() {
     loginStatus = ConnStatus::IN_PROGRESS;
     struct addrinfo hints = {0}, *addrs;
 
-    const char *host = "52.58.97.202";
-    const char *port = "5378";
+    const char *host = "localhost";
+    const char *port = "27015";
 
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
