@@ -18,6 +18,8 @@
 
 #define BUFFER_LENGTH 400
 
+using namespace std;
+
 struct Message {
     char in[BUFFER_LENGTH];
     char out[BUFFER_LENGTH];
@@ -38,14 +40,17 @@ private:
     ConnStatus loginStatus;
 
     struct addrinfo *adr;
-    int len, expectedValue;
+    int len, expectedValue, expecting;
     char checkString[sizeof(message.in)];
+
+    string cin;
 
     bool exit(char *msg);
     bool sendUserName();
 
     int checkMessage(char message[]);
 
+    void wait_for_reply(string string);
     void command(char msg[]);
     void createSocket();
 

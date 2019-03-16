@@ -7,6 +7,7 @@
 #include "Client.h"
 #include <iostream>
 #include <Ws2tcpip.h>
+#include <zconf.h>
 
 using namespace std;
 
@@ -82,9 +83,11 @@ void Client::command(char msg[]) {
         return;
     }
 
-    if (sendto(sock, msg, strlen(msg), 0, adr -> ai_addr, adr -> ai_addrlen) == -1) {
+    strcpy(message.out, msg);
+    if (sendto(sock, message.out, strlen(message.out), 0, adr -> ai_addr, adr -> ai_addrlen) == -1) {
         cout << "Failed to send" << endl;
-        return;
+    } else {
+        expecting = 1;
     }
 }
 
@@ -109,6 +112,7 @@ bool Client::sendUserName() {
         return false;
     }
 
+    expectedValue = 4;
     strcat(send_message, username);
     puts(send_message);
 
@@ -185,13 +189,16 @@ int Client::checkMessage(char message[]) {
 int Client::tick() {
     if(loginStatus == ConnStatus::SUCCESS){
         if(socketBuffer.hasLine()){
-            std::string input;
-            input = socketBuffer.readLine();
+            char input[100];
+            strcpy(input, socketBuffer.readLine().c_str());
 
-            std::cout << "SERVER: " << input << std::endl;
+            if (checkMessage(input) == expectedValue || checkMessage(input) == 1) {
+                std::cout << "SERVER: " << input << std::endl;
+                expectedValue = 1;
+            }
+
         }
         if(stdinBuffer.hasLine()){
-
             string output;
             output = stdinBuffer.readLine();
 
@@ -210,6 +217,15 @@ int Client::readFromSocket() {
 
     int length = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len);
 
+    if (expecting < 10 && expecting > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        expecting++;
+    } else if (expecting >= 10) {
+        expectedValue = checkMessage(message.out);
+        sendto(sock, message.out, strlen(message.out), 0, adr -> ai_addr, adr -> ai_addrlen);
+        expecting = 0;
+    }
+
     // Checking if the message is complete
     if(strcmp(checkString, message.in) == 0 || checkMessage(message.in) == 0) {
         expectedValue = 1;
@@ -217,6 +233,7 @@ int Client::readFromSocket() {
     }
     else if (checkMessage(message.in) != expectedValue && checkMessage(message.in) != 1) {
         expectedValue = 1;
+        sendto(sock, message.out, strlen(message.out), 0, adr -> ai_addr, adr -> ai_addrlen);
         return 0;
     }
 
@@ -229,10 +246,9 @@ int Client::readFromSocket() {
         strcpy(string, output.c_str());
         string[length] = '\0';
         socketBuffer.writeChars(string, length);
+        expecting = 0;
         return length;
     }
-
-    expectedValue = 1;
 
     return length;
 }
@@ -247,6 +263,8 @@ int Client::readFromStdin() {
     strcpy(string, input);
     string[length - 1] = '\n';
     string[length] = '\0';
+
+    cin = string;
 
     if(exit(string)){
         std::cout << "Exiting client" << std::endl;
