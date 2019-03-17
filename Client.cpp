@@ -83,11 +83,12 @@ void Client::command(char msg[]) {
         return;
     }
 
-    strcpy(message.out, msg);
-    if (sendto(sock, message.out, strlen(message.out), 0, adr -> ai_addr, adr -> ai_addrlen) == -1) {
+
+    if (sendto(sock, msg, strlen(msg), 0, adr -> ai_addr, adr -> ai_addrlen) == -1) {
         cout << "Failed to send" << endl;
     } else {
         expecting = 1;
+        strcpy(message.out, msg);
     }
 }
 
@@ -188,6 +189,48 @@ int Client::checkMessage(char message[]) {
 
 int Client::tick() {
     if(loginStatus == ConnStatus::SUCCESS){
+//        int result = -1, length = 0;
+//        fd_set readset;
+//        struct timeval stTimeOut;
+//        stTimeOut.tv_sec =  2;
+//        stTimeOut.tv_usec = 1;
+//        memset(&message.in, 0x00, sizeof(message.in));
+//
+//        FD_ZERO(&readset);
+//        FD_SET(sock, &readset);
+//
+//        //result = select(sock + 1, &readset, NULL, NULL, &stTimeOut);
+//
+//        if (result > 0) {
+//            length = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len);
+//
+//            // Checking if the message is complete
+//            if (strcmp(checkString, message.in) == 0 || checkMessage(message.in) == 0) {
+//                expectedValue = 1;
+//                return 0;
+//            } else if (checkMessage(message.in) != expectedValue && checkMessage(message.in) != 1) {
+//                expectedValue = 1;
+//                sendto(sock, message.out, strlen(message.out), 0, adr->ai_addr, adr->ai_addrlen);
+//                return 0;
+//            }
+//
+//            strcpy(checkString, message.in);
+//
+//            if(length != -1) {
+//                std::string output;
+//                output = message.in;
+//                char string[length];
+//                strcpy(string, output.c_str());
+//                string[length] = '\0';
+//                cout << "Server: " << string << endl;
+////                socketBuffer.writeChars(string, length);
+//                expecting = 0;
+//                return length;
+//            }
+//        } else if (expecting == 1 && result == 0) {
+//            sendto(sock, message.out, strlen(message.out), 0, adr -> ai_addr, adr -> ai_addrlen);
+//        }
+
         if(socketBuffer.hasLine()){
             char input[100];
             strcpy(input, socketBuffer.readLine().c_str());
@@ -212,42 +255,47 @@ int Client::tick() {
     return -1;
 }
 
-int Client::readFromSocket() {
+int Client::readFromSocket(int result) {
+    int length = 0;
+    fd_set readset;
+    struct timeval stTimeOut;
+    stTimeOut.tv_sec =  1;
+    stTimeOut.tv_usec = 1;
     memset(&message.in, 0x00, sizeof(message.in));
 
-    int length = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len);
+    FD_ZERO(&readset);
+    FD_SET(sock, &readset);
 
-    if (expecting < 10 && expecting > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        expecting++;
-    } else if (expecting >= 10) {
-        expectedValue = checkMessage(message.out);
+    //result = select(sock + 1, &readset, NULL, NULL, &stTimeOut);
+    cout.flush();
+    cout << result << endl;
+    if (result > 0) {
+        length = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len);
+
+        // Checking if the message is complete
+        if (strcmp(checkString, message.in) == 0 || checkMessage(message.in) == 0) {
+            expectedValue = 1;
+            return 0;
+        } else if (checkMessage(message.in) != expectedValue && checkMessage(message.in) != 1) {
+            expectedValue = 1;
+            sendto(sock, message.out, strlen(message.out), 0, adr->ai_addr, adr->ai_addrlen);
+            return 0;
+        }
+
+        strcpy(checkString, message.in);
+
+        if(length != -1) {
+            std::string output;
+            output = message.in;
+            char string[length];
+            strcpy(string, output.c_str());
+            string[length] = '\0';
+            socketBuffer.writeChars(string, length);
+            expecting = 0;
+            return length;
+        }
+    } else if (expecting == 1 && result == 0) {
         sendto(sock, message.out, strlen(message.out), 0, adr -> ai_addr, adr -> ai_addrlen);
-        expecting = 0;
-    }
-
-    // Checking if the message is complete
-    if(strcmp(checkString, message.in) == 0 || checkMessage(message.in) == 0) {
-        expectedValue = 1;
-        return 0;
-    }
-    else if (checkMessage(message.in) != expectedValue && checkMessage(message.in) != 1) {
-        expectedValue = 1;
-        sendto(sock, message.out, strlen(message.out), 0, adr -> ai_addr, adr -> ai_addrlen);
-        return 0;
-    }
-
-    strcpy(checkString, message.in);
-
-    if(length != -1) {
-        std::string output;
-        output = message.in;
-        char string[length];
-        strcpy(string, output.c_str());
-        string[length] = '\0';
-        socketBuffer.writeChars(string, length);
-        expecting = 0;
-        return length;
     }
 
     return length;
@@ -256,15 +304,13 @@ int Client::readFromSocket() {
 int Client::readFromStdin() {
     char input[BUFFER_LENGTH];
 
-    std::cin.getline(input,sizeof(input));
+    std::cin.getline(message.out,sizeof(input));
 
-    int length = strlen(input) + 1;
+    int length = strlen(message.out) + 1;
     char string[length];
-    strcpy(string, input);
+    strcpy(string, message.out);
     string[length - 1] = '\n';
     string[length] = '\0';
-
-    cin = string;
 
     if(exit(string)){
         std::cout << "Exiting client" << std::endl;

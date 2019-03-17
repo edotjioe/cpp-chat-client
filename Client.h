@@ -40,7 +40,7 @@ private:
     ConnStatus loginStatus;
 
     struct addrinfo *adr;
-    int len, expectedValue, expecting;
+    int len, expectedValue, expecting = 0;
     char checkString[sizeof(message.in)];
 
     string cin;
@@ -50,7 +50,6 @@ private:
 
     int checkMessage(char message[]);
 
-    void wait_for_reply(string string);
     void command(char msg[]);
     void createSocket();
 
@@ -110,7 +109,7 @@ private:
      *
      * #return Return the return value of 'recv'.
      */
-    int readFromSocket();
+    int readFromSocket(int result);
 
     /**
      * You may ignore this method.
@@ -129,7 +128,21 @@ private:
      */
     inline void threadReadFromSocket() {
         while (!stop) {
-            auto res = readFromSocket();
+            int result = -1, length = 0;
+            fd_set readset;
+            struct timeval stTimeOut;
+            stTimeOut.tv_sec =  2;
+            stTimeOut.tv_usec = 1;
+            memset(&message.in, 0x00, sizeof(message.in));
+
+            FD_ZERO(&readset);
+            FD_SET(sock, &readset);
+
+            result = select(sock + 1, &readset, NULL, NULL, &stTimeOut);
+
+
+            auto res = readFromSocket(result);
+
             if (res <= 0) {
                 stop = true;
             }
