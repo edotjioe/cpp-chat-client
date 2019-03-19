@@ -82,6 +82,7 @@ void Client::command(char msg[]) {
         return;
     }
 
+    strcpy(bufferMessage, msg);
     if (sendto(sock, msg, strlen(msg), 0, adr -> ai_addr, adr -> ai_addrlen) == -1) {
         cout << "Failed to send" << endl;
         return;
@@ -220,8 +221,7 @@ int Client::readFromSocket() {
     length = select(sock + 1, &readset, NULL, NULL, &stTimeOut);
 
     if (length == 0 && expecting == 1) {
-        cout << bufferMessage << endl;
-        command(bufferMessage);
+        sendto(sock, bufferMessage, strlen(bufferMessage), 0, adr -> ai_addr, adr -> ai_addrlen);
         return 1;
     }
 
@@ -274,6 +274,7 @@ int Client::readFromStdin() {
     }
 
     strcpy(bufferMessage, string);
+    strcpy(message.out, string);
     expecting = 1;
 
     expectedValue = checkMessage(string);
