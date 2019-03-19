@@ -189,6 +189,7 @@ int Client::tick() {
             input = socketBuffer.readLine();
 
             std::cout << "SERVER: " << input << std::endl;
+            expecting = 0;
         }
         if(stdinBuffer.hasLine()){
 
@@ -207,41 +208,61 @@ int Client::tick() {
 
 int Client::readFromSocket() {
     memset(&message.in, 0x00, sizeof(message.in));
+    int length;
+    fd_set readset;
+    struct timeval stTimeOut;
+    stTimeOut.tv_sec = 2;
+    stTimeOut.tv_usec = 1;
 
-    int length = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len);
+    FD_ZERO(&readset);
+    FD_SET(sock, &readset);
 
-    // Checking if the message is complete
-    if(strcmp(checkString, message.in) == 0 || checkMessage(message.in) == 0) {
-        expectedValue = 1;
-        return 0;
-    }
-    else if (checkMessage(message.in) != expectedValue && checkMessage(message.in) != 1) {
-        expectedValue = 1;
-        return 0;
-    }
+    length = select(sock + 1, &readset, NULL, NULL, &stTimeOut);
 
-    strcpy(checkString, message.in);
-
-    if(length != -1) {
-        std::string output;
-        output = message.in;
-        char string[length];
-        strcpy(string, output.c_str());
-        string[length] = '\0';
-        socketBuffer.writeChars(string, length);
-        return length;
+    if (length == 0 && expecting == 1) {
+        cout << bufferMessage << endl;
+        command(bufferMessage);
+        return 1;
     }
 
-    expectedValue = 1;
+    if (length > 0) {
+        length = recvfrom(sock, message.in, sizeof(message.in), 0, adr->ai_addr, &len);
 
-    return length;
+        // Checking if the message is complete
+        if( checkMessage(message.in) == 0) {
+            cout << "incomplete"<< endl;
+            expectedValue = 1;
+            return 1;
+        }
+        else if (checkMessage(message.in) != expectedValue && checkMessage(message.in) != 1) {
+            cout << "wrong message" << endl;
+            expectedValue = 1;
+            return 1;
+        }
+
+        strcpy(checkString, message.in);
+
+        if(length != -1) {
+            std::string output;
+            output = message.in;
+            char string[length];
+            strcpy(string, output.c_str());
+            string[length] = '\0';
+            socketBuffer.writeChars(string, length);
+            expectedValue = 1;
+            return length;
+        }
+
+    }
+
+    return 1;
 }
 
 int Client::readFromStdin() {
     char input[BUFFER_LENGTH];
 
     std::cin.getline(input,sizeof(input));
-
+    expecting = 1;
     int length = strlen(input) + 1;
     char string[length];
     strcpy(string, input);
@@ -253,6 +274,9 @@ int Client::readFromStdin() {
         loginStatus = ConnStatus::QUIT;
         return -1;
     }
+
+    strcpy(bufferMessage, string);
+    expecting = 1;
 
     expectedValue = checkMessage(string);
 

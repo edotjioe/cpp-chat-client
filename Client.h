@@ -38,8 +38,9 @@ private:
     ConnStatus loginStatus;
 
     struct addrinfo *adr;
-    int len, expectedValue;
+    int len, expectedValue, expecting;
     char checkString[sizeof(message.in)];
+    char bufferMessage[BUFFER_LENGTH];
 
     bool exit(char *msg);
     bool sendUserName();
