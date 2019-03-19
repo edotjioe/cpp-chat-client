@@ -230,12 +230,10 @@ int Client::readFromSocket() {
 
         // Checking if the message is complete
         if( checkMessage(message.in) == 0) {
-            cout << "incomplete"<< endl;
             expectedValue = 1;
             return 1;
         }
         else if (checkMessage(message.in) != expectedValue && checkMessage(message.in) != 1) {
-            cout << "wrong message" << endl;
             expectedValue = 1;
             return 1;
         }
