@@ -1,16 +1,24 @@
 #include <iostream>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <string>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <string.h>
 #include <thread>
 #include <vector>
+#include <error.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #pragma comment (lib, "Ws2_32.lib")
 
 #define IP_ADDRESS "127.0.0.1"
-#define DEFAULT_PORT "27015"
+#define DEFAULT_PORT 27015
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_LEN_HELLO 11
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
 
 using namespace std;
 
@@ -18,7 +26,7 @@ struct client_type
 {
     int id;
     string name;
-    SOCKET socket;
+    int socket;
 };
 
 struct send_message
@@ -175,8 +183,8 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
 
                 std::cout << msg << std::endl;
 
-                closesocket(new_client.socket);
-                closesocket(client_array[new_client.id].socket);
+                close(new_client.socket);
+                close(client_array[new_client.id].socket);
                 client_array[new_client.id].socket = INVALID_SOCKET;
 
                 break;
@@ -203,8 +211,8 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
 
                 std::cout << msg << std::endl;
 
-                closesocket(new_client.socket);
-                closesocket(client_array[new_client.id].socket);
+                close(new_client.socket);
+                close(client_array[new_client.id].socket);
                 client_array[new_client.id].socket = INVALID_SOCKET;
 
                 break;
@@ -219,45 +227,47 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
 
 int main()
 {
-    WSADATA wsaData;
-    struct addrinfo hints;
-    struct addrinfo *server = NULL;
-    SOCKET server_socket = INVALID_SOCKET;
+    int sockfd, newsockfd, portno;
+    socklen_t clilen;
+    char buffer[256];
+    struct sockaddr_in serv_addr, cli_addr;
+    int n;
     std::string msg = "";
     int num_clients = 0;
     int temp_id = -1;
     std::thread my_thread[MAX_CLIENTS];
 
-    //Initialize Winsock
-    std::cout << "Intializing Winsock..." << std::endl;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
+    sockfd =  socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0)
+        error(1, 1, "ERROR opening socket");
 
-    //Setup hints
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
+    bzero((char *) &serv_addr, sizeof(serv_addr));
 
-    //Setup Server
-    std::cout << "Setting up server..." << std::endl;
-    getaddrinfo(static_cast<LPCTSTR>(IP_ADDRESS), DEFAULT_PORT, &hints, &server);
+    /* setup the host_addr structure for use in bind call */
+    // server byte order
+    serv_addr.sin_family = AF_INET;
 
-    //Create a listening socket for connecting to server
-    std::cout << "Creating server socket..." << std::endl;
-    server_socket = socket(server->ai_family, server->ai_socktype, server->ai_protocol);
+    // automatically be filled with current host's IP address
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-    //Setup socket options
-    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &OPTION_VALUE, sizeof(int)); //Make it possible to re-bind to a port that was used within the last 2 minutes
-    setsockopt(server_socket, IPPROTO_TCP, TCP_NODELAY, &OPTION_VALUE, sizeof(int)); //Used for interactive programs
+    // convert short integer value for port must be converted into network byte order
+    serv_addr.sin_port = htons(DEFAULT_PORT);
 
-    //Assign an address to the server socket.
-    std::cout << "Binding socket..." << std::endl;
-    bind(server_socket, server->ai_addr, (int)server->ai_addrlen);
+    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+        error(1, 1, "ERROR on binding");
+
+//    listen(sockfd,5);
+//
+//    clilen = sizeof(cli_addr);
+//
+//    newsockfd = accept(sockfd,
+//                       (struct sockaddr *) &cli_addr, &clilen);
+//    if (newsockfd < 0)
+//        error(1, 1, "ERROR on accept");
 
     //Listen for incoming connections.
     std::cout << "Listening..." << std::endl;
-    listen(server_socket, SOMAXCONN);
+    listen(newsockfd, SOMAXCONN);
 
     //Initialize the client list
     for (int i = 0; i < MAX_CLIENTS; i++)
@@ -267,8 +277,8 @@ int main()
 
     while (1)
     {
-        SOCKET incoming = INVALID_SOCKET;
-        incoming = accept(server_socket, NULL, NULL);
+        int incoming = INVALID_SOCKET;
+        incoming = accept(newsockfd, NULL, NULL);
 
         if (incoming == INVALID_SOCKET) continue;
 
@@ -306,19 +316,56 @@ int main()
 
 
     //Close listening socket
-    closesocket(server_socket);
+    close(newsockfd);
+    close(sockfd);
 
     //Close client socket
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
         my_thread[i].detach();
-        closesocket(client[i].socket);
+        close(client[i].socket);
     }
 
-    //Clean up Winsock
-    WSACleanup();
     std::cout << "Program has ended successfully" << std::endl;
 
     system("pause");
     return 0;
 }
+
+
+
+//WSADATA wsaData;
+//struct addrinfo hints;
+//struct addrinfo *server = NULL;
+//SOCKET server_socket = INVALID_SOCKET;
+//std::string msg = "";
+//int num_clients = 0;
+//int temp_id = -1;
+//std::thread my_thread[MAX_CLIENTS];
+//
+////Initialize Winsock
+//std::cout << "Intializing Winsock..." << std::endl;
+//WSAStartup(MAKEWORD(2, 2), &wsaData);
+//
+////Setup hints
+//ZeroMemory(&hints, sizeof(hints));
+//hints.ai_family = AF_INET;
+//hints.ai_socktype = SOCK_STREAM;
+//hints.ai_protocol = IPPROTO_TCP;
+//hints.ai_flags = AI_PASSIVE;
+//
+////Setup Server
+//std::cout << "Setting up server..." << std::endl;
+//getaddrinfo(static_cast<LPCTSTR>(IP_ADDRESS), DEFAULT_PORT, &hints, &server);
+//
+////Create a listening socket for connecting to server
+//std::cout << "Creating server socket..." << std::endl;
+//server_socket = socket(server->ai_family, server->ai_socktype, server->ai_protocol);
+//
+////Setup socket options
+//setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &OPTION_VALUE, sizeof(int)); //Make it possible to re-bind to a port that was used within the last 2 minutes
+//setsockopt(server_socket, IPPROTO_TCP, TCP_NODELAY, &OPTION_VALUE, sizeof(int)); //Used for interactive programs
+//
+////Assign an address to the server socket.
+//std::cout << "Binding socket..." << std::endl;
+//bind(server_socket, server->ai_addr, (int)server->ai_addrlen);
