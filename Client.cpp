@@ -8,7 +8,7 @@
 #include <iostream>
 
 void Client::createSocketAndLogIn() {
-    OutputDebugStringW(L"Creating socket.");
+    //OutputDebugStringW(L"Creating socket.");
     std::cout << "Creating socket and log in" << std::endl;
 
     loginStatus = ConnStatus::IN_PROGRESS;
@@ -154,10 +154,10 @@ bool Client::sendUserName() {
     int send_len = send(sock, send_message, strlen(send_message), 0);
 
     if (send_len) {
-        OutputDebugStringW(L"Send Success! SIZE: " + send_len);
+        //OutputDebugStringW(L"Send Success! SIZE: " + send_len);
         return true;
     }else {
-        OutputDebugStringW(L"Error sending username.");
+        //OutputDebugStringW(L"Error sending username.");
         return false;
     }
 }
@@ -169,11 +169,11 @@ ConnStatus Client::receiveResponseFromServer() {
     int recv_length = recv(sock, message.in, 1024, 0);
 
     if (recv_length != -1) {
-        OutputDebugStringW(L"Send Success! SIZE: " + recv_length);
+        //OutputDebugStringW(L"Send Success! SIZE: " + recv_length);
         std::cout << "SERVER: " << message.in << std::endl;
 
         if (!strncmp("IN-USE", message.in, 6)) {
-            OutputDebugStringW(L"Username in-use, ask for new username.");
+            //OutputDebugStringW(L"Username in-use, ask for new username.");
             printf("Username in-use, try another username.");
             return ConnStatus::IN_PROGRESS;
         }
@@ -182,7 +182,7 @@ ConnStatus Client::receiveResponseFromServer() {
             return ConnStatus::BUSY;
         }
         else {
-            OutputDebugStringW(L"Successfully established connection.");
+            //OutputDebugStringW(L"Successfully established connection.");
             return ConnStatus::SUCCESS;
         }
     }else {
