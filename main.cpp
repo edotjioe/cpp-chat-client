@@ -14,7 +14,7 @@
 #pragma comment (lib, "Ws2_32.lib")
 
 #define IP_ADDRESS "127.0.0.1"
-#define DEFAULT_PORT 27016
+#define DEFAULT_PORT 5378
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_LEN_HELLO 11
 #define INVALID_SOCKET -1
