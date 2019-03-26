@@ -21,7 +21,7 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_LEN_HELLO 11
-#define INVALID_SOCk -1
+#define INVALID_SOCK -1
 #define SOCK_ERROR -1
 
 using namespace std;
@@ -189,7 +189,7 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
 
                 close(new_client.socket);
                 close(client_array[new_client.id].socket);
-                client_array[new_client.id].socket = INVALID_SOCk;
+                client_array[new_client.id].socket = INVALID_SOCK;
 
                 break;
             }
@@ -217,7 +217,7 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
 
                 close(new_client.socket);
                 close(client_array[new_client.id].socket);
-                client_array[new_client.id].socket = INVALID_SOCk;
+                client_array[new_client.id].socket = INVALID_SOCK;
 
                 break;
             }
@@ -233,7 +233,7 @@ int main()
 {
     struct addrinfo hints = {0}, *addrs;
 
-    const char *host = "192.168.178.38";
+    const char *host = "192.168.1.236";
     const char *port = "5378";
 
     hints.ai_family = AF_UNSPEC;
@@ -279,15 +279,15 @@ int main()
     //Initialize the client list
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
-        client[i] = { -1, "", INVALID_SOCk };
+        client[i] = { -1, "", INVALID_SOCK };
     }
 
     while (1)
     {
-        int incoming = INVALID_SOCk;
+        int incoming = INVALID_SOCK;
         incoming = accept(sockfd, NULL, NULL);
 
-        if (incoming == INVALID_SOCk) continue;
+        if (incoming == INVALID_SOCK) continue;
 
         //Reset the number of clients
         num_clients = -1;
@@ -297,14 +297,14 @@ int main()
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
 
-            if (client[i].socket == INVALID_SOCk && temp_id == -1)
+            if (client[i].socket == INVALID_SOCK && temp_id == -1)
             {
                 client[i].socket = incoming;
                 client[i].id = i;
                 temp_id = i;
             }
 
-            if (client[i].socket != INVALID_SOCk)
+            if (client[i].socket != INVALID_SOCK)
                 num_clients++;
         }
 
@@ -343,7 +343,7 @@ int main()
 //WSADATA wsaData;
 //struct addrinfo hints;
 //struct addrinfo *server = NULL;
-//SOCKET server_socket = INVALID_SOCk;
+//SOCKET server_socket = INVALID_SOCK;
 //std::string msg = "";
 //int num_clients = 0;
 //int temp_id = -1;
