@@ -7,6 +7,8 @@
 #include "Client.h"
 #include <iostream>
 
+using namespace std;
+
 void Client::createSocketAndLogIn() {
     //OutputDebugStringW(L"Creating socket.");
     std::cout << "Creating socket and log in" << std::endl;
@@ -136,19 +138,20 @@ int Client::readFromStdin() {
 bool Client::sendUserName() {
     memset(&message.out, 0x00, sizeof(message.out));
 
-    char username[] = "", send_message[] = "HELLO-FROM ";
+    char send_message[2000] = "HELLO-FROM ";
     std::cout << "Please enter your user name: ";
 
-    fgets(message.out, BUFFER_LENGTH, stdin);
-    strcat(username, message.out);
+    std::cin.getline(message.out, sizeof(message.out));
 
-    if (quit(username)){
+    message.out[strlen(message.out)] = '\n';
+
+    if (quit(message.out)){
         loginStatus = ConnStatus::QUIT;
         std::cout << "Quiting chat client." << std::endl;
         return false;
     }
 
-    strcat(send_message, username);
+    strcat(send_message, message.out);
     puts(send_message);
 
     int send_len = send(sock, send_message, strlen(send_message), 0);
