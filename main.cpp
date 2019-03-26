@@ -1,9 +1,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include <string.h>
 #include <thread>
 #include <vector>
@@ -15,16 +12,17 @@
 #ifdef _WIN32
 #else
 #include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #endif
 
 #pragma comment (lib, "Ws2_32.lib")
 
-#define IP_ADDRESS "127.0.0.1"
-#define DEFAULT_PORT 27016
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_LEN_HELLO 11
-#define INVALID_SOCKET -1
-#define SOCKET_ERROR -1
+#define INVALID_SOCk -1
+#define SOCK_ERROR -1
 
 using namespace std;
 
@@ -154,7 +152,7 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
         {
             int iResult = recv(new_client.socket, tempmsg, DEFAULT_BUFLEN, 0);
             cout << "Handshake: " << tempmsg;
-            if (iResult != SOCKET_ERROR)
+            if (iResult != SOCK_ERROR)
             {
                 string part;
                 part = string(&tempmsg[DEFAULT_LEN_HELLO], &tempmsg[strlen(tempmsg)]);
@@ -191,7 +189,7 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
 
                 close(new_client.socket);
                 close(client_array[new_client.id].socket);
-                client_array[new_client.id].socket = INVALID_SOCKET;
+                client_array[new_client.id].socket = INVALID_SOCk;
 
                 break;
             }
@@ -207,7 +205,7 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
         {
             int iResult = recv(new_client.socket, tempmsg, DEFAULT_BUFLEN, 0);
             cout << "Session: " << tempmsg;
-            if (iResult != SOCKET_ERROR)
+            if (iResult != SOCK_ERROR)
             {
                 command(tempmsg, new_client);
             }
@@ -219,7 +217,7 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
 
                 close(new_client.socket);
                 close(client_array[new_client.id].socket);
-                client_array[new_client.id].socket = INVALID_SOCKET;
+                client_array[new_client.id].socket = INVALID_SOCk;
 
                 break;
             }
@@ -235,7 +233,7 @@ int main()
 {
     struct addrinfo hints = {0}, *addrs;
 
-    const char *host = "localhost";
+    const char *host = "192.168.178.38";
     const char *port = "5378";
 
     hints.ai_family = AF_UNSPEC;
@@ -281,15 +279,15 @@ int main()
     //Initialize the client list
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
-        client[i] = { -1, "", INVALID_SOCKET };
+        client[i] = { -1, "", INVALID_SOCk };
     }
 
     while (1)
     {
-        int incoming = INVALID_SOCKET;
+        int incoming = INVALID_SOCk;
         incoming = accept(sockfd, NULL, NULL);
 
-        if (incoming == INVALID_SOCKET) continue;
+        if (incoming == INVALID_SOCk) continue;
 
         //Reset the number of clients
         num_clients = -1;
@@ -299,14 +297,14 @@ int main()
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
 
-            if (client[i].socket == INVALID_SOCKET && temp_id == -1)
+            if (client[i].socket == INVALID_SOCk && temp_id == -1)
             {
                 client[i].socket = incoming;
                 client[i].id = i;
                 temp_id = i;
             }
 
-            if (client[i].socket != INVALID_SOCKET)
+            if (client[i].socket != INVALID_SOCk)
                 num_clients++;
         }
 
@@ -345,7 +343,7 @@ int main()
 //WSADATA wsaData;
 //struct addrinfo hints;
 //struct addrinfo *server = NULL;
-//SOCKET server_socket = INVALID_SOCKET;
+//SOCKET server_socket = INVALID_SOCk;
 //std::string msg = "";
 //int num_clients = 0;
 //int temp_id = -1;
