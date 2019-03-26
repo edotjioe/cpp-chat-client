@@ -87,6 +87,12 @@
 		<Unit filename="/home/edo/Projects/cpp-chat-client/main.cpp">
 			<Option target="cpp-chat-server"/>
 		</Unit>
+		<Unit filename="/home/edo/Projects/cpp-chat-client/vusocket.cpp">
+			<Option target="cpp-chat-server"/>
+		</Unit>
+		<Unit filename="/home/edo/Projects/cpp-chat-client/vusocket.h">
+			<Option target="cpp-chat-server"/>
+		</Unit>
 		<Unit filename="/home/edo/Projects/cpp-chat-client/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>

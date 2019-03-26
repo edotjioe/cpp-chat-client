@@ -10,11 +10,17 @@
 #include <error.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "vusocket.h"
+
+#ifdef _WIN32
+#else
+#include <pthread.h>
+#endif
 
 #pragma comment (lib, "Ws2_32.lib")
 
 #define IP_ADDRESS "127.0.0.1"
-#define DEFAULT_PORT 5378
+#define DEFAULT_PORT 27016
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_LEN_HELLO 11
 #define INVALID_SOCKET -1
@@ -227,47 +233,50 @@ int process_client(client_type &new_client, vector<client_type> &client_array, t
 
 int main()
 {
-    int sockfd, newsockfd, portno;
-    socklen_t clilen;
-    char buffer[256];
-    struct sockaddr_in serv_addr, cli_addr;
-    int n;
-    std::string msg = "";
+    struct addrinfo hints = {0}, *addrs;
+
+    const char *host = "localhost";
+    const char *port = "5378";
+
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    SOCKET sockfd;
+    string msg = "";
     int num_clients = 0;
     int temp_id = -1;
     std::thread my_thread[MAX_CLIENTS];
 
-    sockfd =  socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
-        error(1, 1, "ERROR opening socket");
+    //OutputDebugStringW(L"Creating socket.");
+    std::cout << "Creating socket and log in" << std::endl;
 
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    sock_init();
 
-    /* setup the host_addr structure for use in bind call */
-    // server byte order
-    serv_addr.sin_family = AF_INET;
+    const int addrinfo = getaddrinfo(host, port, &hints, &addrs);
 
-    // automatically be filled with current host's IP address
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    if (addrinfo != 0) {
+        std::cout << "Host not found." << std::endl;
+        abort();
+    }
 
-    // convert short integer value for port must be converted into network byte order
-    serv_addr.sin_port = htons(DEFAULT_PORT);
 
-    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-        error(1, 1, "ERROR on binding");
-
-//    listen(sockfd,5);
-//
-//    clilen = sizeof(cli_addr);
-//
-//    newsockfd = accept(sockfd,
-//                       (struct sockaddr *) &cli_addr, &clilen);
-//    if (newsockfd < 0)
-//        error(1, 1, "ERROR on accept");
+    for (struct addrinfo *adr = addrs; adr != nullptr; adr = adr -> ai_next) {
+        if ((sockfd = socket(adr -> ai_family, adr -> ai_socktype, adr -> ai_protocol)) == -1) {
+            sock_error_code();
+            continue;
+        }
+        if (bind((SOCKET) sockfd, adr -> ai_addr, adr -> ai_addrlen) == -1) {
+            sock_error_code();
+            sock_close(sockfd);
+            continue;
+        }
+        break;
+    }
 
     //Listen for incoming connections.
     std::cout << "Listening..." << std::endl;
-    listen(newsockfd, SOMAXCONN);
+    listen(sockfd, SOMAXCONN);
 
     //Initialize the client list
     for (int i = 0; i < MAX_CLIENTS; i++)
@@ -278,7 +287,7 @@ int main()
     while (1)
     {
         int incoming = INVALID_SOCKET;
-        incoming = accept(newsockfd, NULL, NULL);
+        incoming = accept(sockfd, NULL, NULL);
 
         if (incoming == INVALID_SOCKET) continue;
 
@@ -316,7 +325,6 @@ int main()
 
 
     //Close listening socket
-    close(newsockfd);
     close(sockfd);
 
     //Close client socket
