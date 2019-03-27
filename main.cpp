@@ -233,7 +233,7 @@ int main()
 {
     struct addrinfo hints = {0}, *addrs;
 
-    const char *host = "192.168.1.236";
+    const char *host = "192.168.178.62";
     const char *port = "5378";
 
     hints.ai_family = AF_UNSPEC;
